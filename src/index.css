@@ -1,0 +1,37 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;800&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  
+  --color-dash-bg: #0B0E14;
+  --color-dash-panel: rgba(26, 30, 38, 0.6);
+  --color-dash-border: rgba(255, 255, 255, 0.08);
+  --color-dash-accent: #3B82F6;
+  --color-dash-gold: #A38652;
+  --color-dash-text: #e2e8f0;
+}
+
+@layer base {
+  body {
+    @apply bg-dash-bg text-dash-text font-sans selection:bg-dash-accent selection:text-white;
+  }
+}
+
+.bg-grid {
+  background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.03) 1px, transparent 0);
+  background-size: 32px 32px;
+}
+
+.glass-panel {
+  @apply bg-dash-panel backdrop-blur-md border border-dash-border;
+}
+
+.data-label {
+  @apply font-mono text-[10px] uppercase tracking-widest text-slate-500;
+}
+
+.executive-text {
+  @apply font-sans text-sm leading-relaxed;
+}
