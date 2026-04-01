@@ -1,6 +1,5 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// Ensure VITE_ prefix is used
 const apiKey = (import.meta.env as any).VITE_GEMINI_API_KEY || "";
 const genAI = new GoogleGenerativeAI(apiKey);
 
@@ -17,52 +16,52 @@ export async function generateBotTurn(
   try {
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-    const prompt = `You are a Grandmaster Chess AI. 
-    LENS: ${lens} | DIFFICULTY: ${difficulty}
-    LEGAL MOVES: ${legalMoves.join(", ")}
+    const prompt = `CHESS_STRATEGY_ENGINE:
+    LENS: ${lens} | DIFFICULTY: ${difficulty} | FEN: ${fen}
+    LEGAL_MOVES: ${legalMoves.join(", ")}
     
-    TASK: Pick ONE move and provide a 1-sentence strategic analogy.
-    RETURN ONLY THIS JSON: {"move": "chosen_move", "analogy": "your_sentence"}`;
+    INSTRUCTION: Pick one move and give a 1-sentence strategic analogy.
+    FORMAT: {"move": "chosen_move", "analogy": "sentence"}`;
 
     const result = await model.generateContent(prompt);
-    let text = result.response.text().trim();
+    const rawText = result.response.text();
     
-    // Clean Markdown
-    text = text.replace(/```json|```/g, "").trim();
-    
-    // Find JSON brackets
-    const start = text.indexOf('{');
-    const end = text.lastIndexOf('}');
-    if (start !== -1 && end !== -1) {
-      text = text.substring(start, end + 1);
-    }
+    // --- SAFE EXTRACTION LOGIC ---
+    let move = "";
+    let analogy = "";
 
-    const data = JSON.parse(text);
-    
-    // Validate Move
-    let validatedMove = data.move;
-    if (!legalMoves.includes(validatedMove)) {
-       validatedMove = legalMoves[Math.floor(Math.random() * legalMoves.length)];
+    // Try to find a legal move mentioned in the text if JSON fails
+    const foundMove = legalMoves.find(m => rawText.includes(m));
+    move = foundMove || legalMoves[Math.floor(Math.random() * legalMoves.length)];
+
+    try {
+      // Try standard JSON cleaning
+      const cleanJson = rawText.replace(/```json|```/g, "").trim();
+      const data = JSON.parse(cleanJson.substring(cleanJson.indexOf('{'), cleanJson.lastIndexOf('}') + 1));
+      if (legalMoves.includes(data.move)) move = data.move;
+      analogy = data.analogy;
+    } catch (e) {
+      // Fallback analogy if JSON is broken but move was found
+      analogy = `Strategic pivot executed via ${move} to secure market position.`;
     }
 
     return {
-      move: validatedMove,
-      analogy: data.analogy || "Strategic repositioning complete.",
-      news_headline: "MARKET IMPACT DETECTED",
+      move: move,
+      analogy: analogy,
+      news_headline: `${lens.toUpperCase()} SHIFT DETECTED`,
       stats: {
-        fiscal_stability: Math.floor(Math.random() * 30) + 40,
-        market_confidence: Math.floor(Math.random() * 30) + 40,
-        inflation: Math.floor(Math.random() * 15)
+        fiscal_stability: Math.floor(Math.random() * 40) + 30,
+        market_confidence: Math.floor(Math.random() * 40) + 30,
+        inflation: 10
       }
     };
 
   } catch (error: any) {
-    console.error("Gemini Bridge Error:", error);
-    const fallbackMove = legalMoves[Math.floor(Math.random() * legalMoves.length)];
+    console.error("Critical Gemini Error:", error);
     return {
-      move: fallbackMove,
-      analogy: "ADVISOR_RECALIBRATING: Processing high-frequency market shifts.",
-      news_headline: "VOLATILITY DETECTED",
+      move: legalMoves[Math.floor(Math.random() * legalMoves.length)],
+      analogy: "Intelligence link unstable. Executing automated tactical response.",
+      news_headline: "MARKET VOLATILITY",
       stats: { fiscal_stability: 50, market_confidence: 50, inflation: 50 }
     };
   }
