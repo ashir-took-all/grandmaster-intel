@@ -1,8 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const apiKey = (import.meta.env as any).VITE_GEMINI_API_KEY || "";
-
-// FIX: Force the version here in the main setup
 const genAI = new GoogleGenerativeAI(apiKey);
 
 export async function generateBotTurn(
@@ -16,9 +14,9 @@ export async function generateBotTurn(
   if (!apiKey || !legalMoves.length) return null;
 
   try {
-    // FIX: Explicitly set the version to v1beta for gemini-pro
+    // THIS IS THE ONE: Use gemini-1.5-pro with v1beta
     const model = genAI.getGenerativeModel({ 
-      model: "gemini-pro" 
+      model: "gemini-1.5-pro" 
     }, { apiVersion: "v1beta" }); 
 
     const prompt = `You are a Chess Strategist.
