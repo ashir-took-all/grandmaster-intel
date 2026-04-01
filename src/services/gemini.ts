@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 // VITE_ prefix is mandatory for Vercel/Vite environment variables
-const apiKey = "AIzaSyASwO4JJc6FkisenR3OYHYbUb5NNV2zYng";
+const apiKey = import.meta.env.VITE_GEMINI_API_KEY || "";
 const genAI = new GoogleGenerativeAI(apiKey);
 
 export async function generateBotTurn(
