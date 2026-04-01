@@ -1,6 +1,8 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const apiKey = (import.meta.env as any).VITE_GEMINI_API_KEY || "";
+
+// FIX: Force the version here in the main setup
 const genAI = new GoogleGenerativeAI(apiKey);
 
 export async function generateBotTurn(
@@ -14,10 +16,10 @@ export async function generateBotTurn(
   if (!apiKey || !legalMoves.length) return null;
 
   try {
-    // SWITCHING TO gemini-pro FOR MAXIMUM COMPATIBILITY
+    // FIX: Explicitly set the version to v1beta for gemini-pro
     const model = genAI.getGenerativeModel({ 
       model: "gemini-pro" 
-    }); 
+    }, { apiVersion: "v1beta" }); 
 
     const prompt = `You are a Chess Strategist.
     LEGAL MOVES: ${legalMoves.join(", ")}
@@ -27,7 +29,6 @@ export async function generateBotTurn(
     const result = await model.generateContent(prompt);
     let text = result.response.text().replace(/```json|```/g, "").trim();
     
-    // Clean JSON
     const start = text.indexOf('{');
     const end = text.lastIndexOf('}');
     if (start !== -1 && end !== -1) {
@@ -35,7 +36,6 @@ export async function generateBotTurn(
     }
 
     const data = JSON.parse(text);
-    
     let move = legalMoves.includes(data.move) ? data.move : legalMoves[Math.floor(Math.random() * legalMoves.length)];
 
     return {
