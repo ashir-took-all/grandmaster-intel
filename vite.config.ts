@@ -12,4 +12,9 @@ export default defineConfig({
     port: 3000,
     host: '0.0.0.0',
   },
+  // --- THE CRITICAL FIX FOR GEMINI API ---
+  // This allows the AI SDK to communicate properly in a Vite environment
+  define: {
+    'process.env': {}
+  }
 })
