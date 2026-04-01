@@ -1,67 +1,60 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
+// Force Vite to recognize the environment variable
 const apiKey = (import.meta.env as any).VITE_GEMINI_API_KEY || "";
+
+// CRITICAL FIX: Adding 'apiVersion: "v1beta"' to the config
 const genAI = new GoogleGenerativeAI(apiKey);
 
 export async function generateBotTurn(
-  fen: string,
-  history: string[],
-  legalMoves: string[],
-  turn: 'w' | 'b',
-  lens: string = 'Geopolitics',
+  fen: string, 
+  history: string[], 
+  legalMoves: string[], 
+  turn: 'w' | 'b', 
+  lens: string = 'Geopolitics', 
   difficulty: string = 'GLOBAL'
 ) {
   if (!apiKey || !legalMoves.length) return null;
 
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    // FORCE v1beta to support gemini-1.5-flash
+    const model = genAI.getGenerativeModel({ 
+      model: "gemini-1.5-flash"
+    }, { apiVersion: "v1beta" }); 
 
-    const prompt = `CHESS_STRATEGY_ENGINE:
-    LENS: ${lens} | DIFFICULTY: ${difficulty} | FEN: ${fen}
+    const prompt = `CHESS_STRATEGY:
     LEGAL_MOVES: ${legalMoves.join(", ")}
+    LENS: ${lens} | DIFFICULTY: ${difficulty}
     
-    INSTRUCTION: Pick one move and give a 1-sentence strategic analogy.
-    FORMAT: {"move": "chosen_move", "analogy": "sentence"}`;
+    TASK: Pick ONE move. Return ONLY JSON: {"move": "string", "analogy": "string"}`;
 
     const result = await model.generateContent(prompt);
-    const rawText = result.response.text();
+    let text = result.response.text().replace(/```json|```/g, "").trim();
     
-    // --- SAFE EXTRACTION LOGIC ---
-    let move = "";
-    let analogy = "";
-
-    // Try to find a legal move mentioned in the text if JSON fails
-    const foundMove = legalMoves.find(m => rawText.includes(m));
-    move = foundMove || legalMoves[Math.floor(Math.random() * legalMoves.length)];
-
-    try {
-      // Try standard JSON cleaning
-      const cleanJson = rawText.replace(/```json|```/g, "").trim();
-      const data = JSON.parse(cleanJson.substring(cleanJson.indexOf('{'), cleanJson.lastIndexOf('}') + 1));
-      if (legalMoves.includes(data.move)) move = data.move;
-      analogy = data.analogy;
-    } catch (e) {
-      // Fallback analogy if JSON is broken but move was found
-      analogy = `Strategic pivot executed via ${move} to secure market position.`;
+    const start = text.indexOf('{');
+    const end = text.lastIndexOf('}');
+    if (start !== -1 && end !== -1) {
+      text = text.substring(start, end + 1);
     }
+
+    const data = JSON.parse(text);
+    
+    let move = legalMoves.includes(data.move) ? data.move : legalMoves[Math.floor(Math.random() * legalMoves.length)];
 
     return {
       move: move,
-      analogy: analogy,
-      news_headline: `${lens.toUpperCase()} SHIFT DETECTED`,
-      stats: {
-        fiscal_stability: Math.floor(Math.random() * 40) + 30,
-        market_confidence: Math.floor(Math.random() * 40) + 30,
-        inflation: 10
-      }
+      analogy: data.analogy || "Tactical advancement confirmed.",
+      news_headline: "MARKET IMPACT DETECTED",
+      stats: { fiscal_stability: 50, market_confidence: 50, inflation: 10 }
     };
 
   } catch (error: any) {
     console.error("Critical Gemini Error:", error);
+    // This fallback keeps the game moving while the UI shows the error
     return {
       move: legalMoves[Math.floor(Math.random() * legalMoves.length)],
-      analogy: "Intelligence link unstable. Executing automated tactical response.",
-      news_headline: "MARKET VOLATILITY",
+      analogy: "Executing automated tactical response due to signal interference.",
+      news_headline: "VOLATILITY DETECTED",
       stats: { fiscal_stability: 50, market_confidence: 50, inflation: 50 }
     };
   }
