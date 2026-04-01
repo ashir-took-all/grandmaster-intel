@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
+// Vercel/Vite require the VITE_ prefix for environment variables
 const apiKey = import.meta.env.VITE_GEMINI_API_KEY || "";
 const genAI = new GoogleGenerativeAI(apiKey);
 
@@ -8,43 +9,44 @@ export async function generateBotTurn(
   history: string[],
   legalMoves: string[],
   turn: 'w' | 'b',
-  lens: string = 'Geopolitics'
+  lens: string = 'Geopolitics',
+  difficulty: string = 'GLOBAL'
 ) {
-  if (!apiKey) return null;
+  if (!apiKey || !legalMoves.length) return null;
 
   try {
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-    // We are stripping the prompt to the absolute bare minimum to avoid errors
-    const prompt = `Chess Game. Lens: ${lens}. 
-    Moves: ${legalMoves.join(", ")}. 
-    Pick one move and give a 1-sentence analogy. 
-    Return ONLY: {"move": "chosen_move", "analogy": "sentence"}`;
+    // The prompt is now a strict "Command" to prevent the AI from talking too much
+    const prompt = `You are a Grandmaster Chess AI. 
+    LENS: ${lens} | DIFFICULTY: ${difficulty}
+    LEGAL MOVES: ${legalMoves.join(", ")}
+    
+    TASK: Pick ONE move and provide a 1-sentence strategic analogy.
+    RETURN ONLY THIS JSON: {"move": "chosen_move", "analogy": "your_sentence"}`;
 
     const result = await model.generateContent(prompt);
     let text = result.response.text().trim();
     
-    // THE SHIELD: This part ensures only the JSON is read
-    const jsonStart = text.indexOf('{');
-    const jsonEnd = text.lastIndexOf('}');
-    const cleanJson = text.substring(jsonStart, jsonEnd + 1);
+    // STEP 1: Remove Markdown code blocks if the AI added them
+    text = text.replace(/```json|```/g, "").trim();
     
-    const data = JSON.parse(cleanJson);
+    // STEP 2: Find the first '{' and last '}' to isolate the JSON
+    const start = text.indexOf('{');
+    const end = text.lastIndexOf('}');
+    if (start !== -1 && end !== -1) {
+      text = text.substring(start, end + 1);
+    }
+
+    const data = JSON.parse(text);
+    
+    // STEP 3: Validate the move against the legal list
+    let validatedMove = data.move;
+    if (!legalMoves.includes(validatedMove)) {
+       // If the AI hallucinations a move, pick a random legal one
+       validatedMove = legalMoves[Math.floor(Math.random() * legalMoves.length)];
+    }
 
     return {
-      move: legalMoves.includes(data.move) ? data.move : legalMoves[0],
-      analogy: data.analogy || "Strategic shift confirmed.",
-      news_headline: "MARKET IMPACT",
-      stats: { fiscal_stability: 50, market_confidence: 50, inflation: 50 }
-    };
-  } catch (error) {
-    console.error("AI Error:", error);
-    // FALLBACK: If everything fails, it picks a RANDOM move to show it's working
-    return {
-      move: legalMoves[Math.floor(Math.random() * legalMoves.length)],
-      analogy: "ADVISOR_BUSY: Processing geopolitical shifts.",
-      news_headline: "VOLATILITY",
-      stats: { fiscal_stability: 50, market_confidence: 50, inflation: 50 }
-    };
-  }
-}
+      move: validatedMove,
+      analogy: data.analogy || "Strategic repositioning complete
