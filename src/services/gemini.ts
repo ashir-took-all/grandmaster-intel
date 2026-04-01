@@ -14,15 +14,16 @@ export async function generateBotTurn(
   if (!apiKey || !legalMoves.length) return null;
 
   try {
-    // THIS IS THE ONE: Use gemini-1.5-pro with v1beta
+    // 2026 UPDATE: Using gemini-2.5-flash for maximum speed and stability
     const model = genAI.getGenerativeModel({ 
-      model: "gemini-1.5-pro" 
+      model: "gemini-2.5-flash" 
     }, { apiVersion: "v1beta" }); 
 
-    const prompt = `You are a Chess Strategist.
+    const prompt = `You are a Grandmaster Chess AI (Grandmaster Intel).
     LEGAL MOVES: ${legalMoves.join(", ")}
-    LENS: ${lens}
-    TASK: Pick ONE move. Return ONLY JSON: {"move": "chosen_move", "analogy": "one short sentence"}`;
+    LENS: ${lens} | DIFFICULTY: ${difficulty}
+    
+    TASK: Pick ONE move. Return ONLY JSON: {"move": "chosen_move", "analogy": "one short strategy sentence"}`;
 
     const result = await model.generateContent(prompt);
     let text = result.response.text().replace(/```json|```/g, "").trim();
@@ -38,8 +39,8 @@ export async function generateBotTurn(
 
     return {
       move: move,
-      analogy: data.analogy || "Strategic pivot executed.",
-      news_headline: "MARKET IMPACT DETECTED",
+      analogy: data.analogy || "Strategic maneuver executed.",
+      news_headline: `${lens.toUpperCase()} UPDATE`,
       stats: { fiscal_stability: 50, market_confidence: 50, inflation: 10 }
     };
 
@@ -47,8 +48,8 @@ export async function generateBotTurn(
     console.error("Critical Gemini Error:", error);
     return {
       move: legalMoves[Math.floor(Math.random() * legalMoves.length)],
-      analogy: "Intelligence link unstable. Executing automated tactical response.",
-      news_headline: "VOLATILITY DETECTED",
+      analogy: "Signal interference detected. Executing emergency tactical protocol.",
+      news_headline: "MARKET VOLATILITY",
       stats: { fiscal_stability: 50, market_confidence: 50, inflation: 50 }
     };
   }
