@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// VITE REQUIREMENT: Use import.meta.env and the VITE_ prefix
+// This pulls the key you saved in Vercel
 const apiKey = import.meta.env.VITE_GEMINI_API_KEY || "";
 const genAI = new GoogleGenerativeAI(apiKey);
 
@@ -10,57 +10,41 @@ export async function generateBotTurn(
   legalMoves: string[],
   turn: 'w' | 'b',
   lens: string = 'Geopolitics',
-  difficulty: string = 'SENIOR',
-  baseline?: string | null
+  difficulty: string = 'SENIOR'
 ) {
-  // If the key is missing, this will trigger the error block below
   if (!apiKey) {
-    throw new Error("API key is missing. Check Vercel Environment Variables.");
+    return { 
+      move: legalMoves[0], 
+      analogy: "API_KEY_MISSING: Check Vercel Environment Variables.",
+      news_headline: "SYSTEM OFFLINE",
+      stats: { fiscal_stability: 0, market_confidence: 0, inflation: 0 }
+    };
   }
 
-  const turnColor = turn === 'w' ? 'White' : 'Black';
-  const difficultyContext = 
-    difficulty === 'JUNIOR' ? 'The adversary is showing signs of market volatility.' :
-    difficulty === 'GLOBAL' ? 'The adversary is executing a precision-engineered takeover.' :
-    'The adversary is a balanced, positional strategist.';
-
-  const prompt = `
-    CURRENT FEN: ${fen}
-    MOVE HISTORY: ${history.join(", ")}
-    LEGAL MOVES: ${legalMoves.join(", ")}
-    TASK: Analyze through the lens of ${lens}. Select best move for ${turnColor}.
-    RESPONSE FORMAT: JSON
-    {
-      "user_move_analogy": "string",
-      "move": "string",
-      "analogy": "string",
-      "news_headline": "string",
-      "stats": { "fiscal_stability": 50, "market_confidence": 50, "inflation": 50 }
-    }
-  `;
-
   try {
-    // Vite uses the latest Gemini model names
     const model = genAI.getGenerativeModel({ 
       model: "gemini-1.5-flash",
       generationConfig: { responseMimeType: "application/json" }
     });
 
-    const result = await model.generateContent(prompt);
-    const text = result.response.text();
-    const data = JSON.parse(text);
+    const prompt = `Analyze this chess game through the lens of ${lens}. 
+    Moves: ${history.join(", ")}. FEN: ${fen}.
+    Provide a JSON response with: user_move_analogy, move (from ${legalMoves.join(", ")}), analogy, news_headline, and stats (fiscal_stability, market_confidence, inflation).`;
 
-    // Validate that the AI actually picked a legal move
+    const result = await model.generateContent(prompt);
+    const data = JSON.parse(result.response.text());
+
+    // Ensure the move is actually legal
     if (!legalMoves.includes(data.move)) {
       data.move = legalMoves[0];
     }
     
     return data;
-  } catch (error: any) {
+  } catch (error) {
     console.error("Gemini Error:", error);
     return { 
       move: legalMoves[0], 
-      analogy: "COMMUNICATIONS_JAMMED: Executing default protocol.",
+      analogy: "COMMUNICATIONS_JAMMED: Intelligence link failed.",
       news_headline: "MARKET VOLATILITY DETECTED.",
       stats: { fiscal_stability: 50, market_confidence: 50, inflation: 50 }
     };
