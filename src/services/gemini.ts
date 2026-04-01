@@ -16,29 +16,48 @@ export async function generateBotTurn(
   try {
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-    const prompt = `Analyze this chess move through the lens of ${lens}. 
-    History: ${history.join(", ")}. 
-    1. Select a move from: ${legalMoves.join(", ")}.
-    2. Give a 1-sentence strategic analogy.
-    Return only a JSON object like this: {"move": "move_here", "analogy": "text_here"}`;
+    // Explicitly telling the AI NOT to repeat the same move
+    const prompt = `You are a Grandmaster Chess AI playing as ${turn === 'w' ? 'White' : 'Black'}.
+    Current Board (FEN): ${fen}
+    History: ${history.join(", ")}
+    Perspective: ${lens}
+    
+    TASK:
+    1. Pick the SMARTEST move from this list: ${legalMoves.join(", ")}. Do NOT just pick the first one.
+    2. Provide a 1-sentence strategic analogy.
+    
+    Format your response EXACTLY like this JSON, nothing else:
+    {"move": "chosen_move", "analogy": "your_analogy", "headline": "NEWS_STYLE_HEADLINE"}`;
 
     const result = await model.generateContent(prompt);
-    const text = result.response.text().replace(/```json|```/g, "").trim();
-    const data = JSON.parse(text);
+    let text = result.response.text();
+    
+    // Cleanup: Remove any markdown or extra text the AI might add
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    const cleanJson = jsonMatch ? jsonMatch[0] : text;
+    const data = JSON.parse(cleanJson);
+
+    // Final check: Is the move actually in our legal list?
+    const finalMove = legalMoves.includes(data.move) ? data.move : legalMoves[Math.floor(Math.random() * legalMoves.length)];
 
     return {
-      move: data.move || legalMoves[0],
-      analogy: data.analogy || "Strategic repositioning complete.",
-      news_headline: "MARKET VOLATILITY DETECTED.",
-      stats: { fiscal_stability: 50, market_confidence: 50, inflation: 50 }
+      move: finalMove,
+      analogy: data.analogy || "Strategic positioning finalized.",
+      news_headline: data.headline || "MARKET SHIFT DETECTED.",
+      stats: { 
+        fiscal_stability: Math.floor(Math.random() * 20) + 40, 
+        market_confidence: Math.floor(Math.random() * 20) + 40, 
+        inflation: Math.floor(Math.random() * 10) + 5 
+      }
     };
   } catch (error) {
-    console.error("Gemini Error:", error);
-    // Return a default move so the game doesn't freeze
+    console.error("Gemini Logic Error:", error);
+    // If it fails, pick a RANDOM legal move so it's not always the same piece
+    const randomMove = legalMoves[Math.floor(Math.random() * legalMoves.length)];
     return { 
-      move: legalMoves[0], 
-      analogy: "TACTICAL_RECALIBRATION: Advisor is processing market data.",
-      news_headline: "MARKET WATCH ACTIVE",
+      move: randomMove, 
+      analogy: "ADVISOR_BUSY: Executing tactical contingency move.",
+      news_headline: "MARKET VOLATILITY DETECTED.",
       stats: { fiscal_stability: 50, market_confidence: 50, inflation: 50 }
     };
   }
