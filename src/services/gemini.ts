@@ -18,17 +18,22 @@ export async function generateBotTurn(
       model: "gemini-2.5-flash" 
     }, { apiVersion: "v1beta" }); 
 
-    const currentPlayer = turn === 'w' ? 'White' : 'Black';
+    // THE FIX: We tell the AI that YOU are White and it is playing for BLACK.
+    const botColor = turn === 'b' ? 'Black' : 'White';
+    const userColor = turn === 'b' ? 'White' : 'Black';
 
-    const prompt = `You are a Chess Advisor.
-    PLAYER: ${currentPlayer}
-    MOVES: ${legalMoves.join(", ")}
+    const prompt = `You are the AI Chess Bot. 
+    YOU ARE PLAYING AS: ${botColor}. 
+    THE HUMAN IS playing as: ${userColor}.
+    MOVES AVAILABLE FOR YOU: ${legalMoves.join(", ")}
     
     TASK:
     1. Pick one move.
-    2. Explain in 1 very simple sentence (level: 5-year-old).
-    3. Return ONLY this JSON:
-    {"move": "chosen_move", "simple": "explanation"}`;
+    2. Explain it in 5-year-old English. 
+    3. IMPORTANT: Use words like "I am moving" or "The ${botColor} horse is moving".
+    
+    Return ONLY JSON:
+    {"move": "chosen_move", "analogy": "explanation", "lastManeuver": "chosen_move"}`;
 
     const result = await model.generateContent(prompt);
     let text = result.response.text().replace(/```json|```/g, "").trim();
@@ -43,25 +48,20 @@ export async function generateBotTurn(
     let finalMove = data.move.trim();
     if (!legalMoves.includes(finalMove)) finalMove = legalMoves[0];
 
-    // THE FIX: We are sending EVERY possible name for a move.
-    // This way, no matter what the UI box is named, it finds the data.
     return {
       move: finalMove,
-      lastManeuver: finalMove,
-      maneuver: finalMove,
-      lastMove: finalMove,
-      playedMove: finalMove,
-      analogy: data.simple || "Moving a piece to help the team.",
-      news_headline: `${currentPlayer.toUpperCase()} STRATEGY`,
+      lastManeuver: finalMove, // For the UI box
+      analogy: data.analogy || "I am making a move.",
+      news_headline: `${botColor.toUpperCase()} MANEUVER`,
       stats: { fiscal_stability: 50, market_confidence: 50, inflation: 10 }
     };
 
   } catch (error: any) {
-    console.error("UI Sync Error:", error);
+    console.error("AI Logic Error:", error);
     return {
       move: legalMoves[0],
       lastManeuver: legalMoves[0],
-      analogy: "Making a move to a new square.",
+      analogy: "I am moving my piece now.",
       news_headline: "TACTICAL SHIFT",
       stats: { fiscal_stability: 50, market_confidence: 50, inflation: 50 }
     };
