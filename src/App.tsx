@@ -591,18 +591,20 @@ export default function App() {
         playMoveSound(moveData.result, moveData.gameCopy);
         
         setBriefingHistory(prev => {
-          const updated = [...prev, 
-            {
-              text: user_move_analogy,
-              timestamp: new Date().toLocaleTimeString(),
-            },
-            {
-              text: analogy,
-              timestamp: new Date().toLocaleTimeString(),
-            }
-          ];
-          return updated.slice(-10);
-        });
+  const updated = [...prev,
+    {
+      text: user_move_analogy,
+      move: move, // ADD THIS LINE (Line 597)
+      timestamp: new Date().toLocaleTimeString(),
+    },
+    {
+      text: analogy,
+      move: move, // ADD THIS LINE (Line 601)
+      timestamp: new Date().toLocaleTimeString(),
+    }
+  ];
+  return updated.slice(-10);
+});
         setHeadlines(prev => [{ text: news_headline, id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}` }, ...prev].slice(0, 10));
         
         const newStats = {
