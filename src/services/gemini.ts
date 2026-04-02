@@ -19,21 +19,31 @@ export async function generateBotTurn(
     }, { apiVersion: "v1beta" }); 
 
     const botColor = turn === 'b' ? 'Black' : 'White';
+    const humanColor = turn === 'b' ? 'White' : 'Black';
 
-    const prompt = `You are a Pro Chess Strategist. 
-    YOUR_COLOR: ${botColor} | MOVES: ${legalMoves.join(", ")}
+    const prompt = `You are the Grandmaster Intel AI, a pro-level Chess Strategist.
+    CONTEXT: Playing as ${botColor} against a Human playing as ${humanColor}.
+    LENS: ${lens} | DIFFICULTY: ${difficulty}
     
-    TASK:
-    1. Pick one move.
-    2. Explain it in 1 short sentence (18-year-old level).
-    3. Provide the move in Standard Algebraic Notation (SAN) if possible.
-    
+    LEGAL_MOVES_AVAILABLE: ${legalMoves.join(", ")}
+    RECENT_HISTORY: ${history.slice(-10).join(", ")}
+
+    YOUR TASKS:
+    1. Pick the best strategic move from the list.
+    2. Explain the move like a smart 18-year-old coach (Tactical, direct, no baby talk).
+    3. IMPORTANT: Return the move in Standard Algebraic Notation (SAN). 
+       Example: Use 'Nf3' or 'e4' or 'O-O'. Do NOT use coordinates like 'g1f3' or 'e2e4'.
+
     Return ONLY JSON:
-    {"move": "chosen_move", "san": "move_name", "analysis": "short_sentence"}`;
+    {
+      "move": "san_notation_move",
+      "analysis": "one_sentence_explanation"
+    }`;
 
     const result = await model.generateContent(prompt);
     let text = result.response.text().replace(/```json|```/g, "").trim();
     
+    // Safety JSON parsing
     const start = text.indexOf('{');
     const end = text.lastIndexOf('}');
     if (start !== -1 && end !== -1) {
@@ -42,29 +52,32 @@ export async function generateBotTurn(
 
     const data = JSON.parse(text);
     let finalMove = data.move.trim();
-    if (!legalMoves.includes(finalMove)) finalMove = legalMoves[0];
 
-    // THE OVERRIDE: We send the "San" name (like Qf6) to the Last Maneuver box.
-    // If "san" is missing, we use the move itself.
-    const displayMove = data.san || finalMove;
+    // LOOP BREAKER: Prevent moving the same piece back and forth if possible
+    if (history.length > 2 && history[history.length - 2] === finalMove && legalMoves.length > 1) {
+        finalMove = legalMoves.find(m => m !== finalMove) || legalMoves[0];
+    }
+
+    // Validation: Ensure the AI's SAN move is actually in our legal list
+    if (!legalMoves.includes(finalMove)) {
+       finalMove = legalMoves[0];
+    }
 
     return {
       move: finalMove,
-      // We are flooding the response with every key the UI might be asking for
-      lastManeuver: displayMove,
-      lastMove: displayMove,
-      maneuver: displayMove,
-      analogy: data.analysis || "Improving coordination for board control.",
-      news_headline: `${botColor.toUpperCase()} STRATEGIC MANEUVER`,
-      stats: { fiscal_stability: 65, market_confidence: 60, inflation: 10 }
+      lastManeuver: finalMove, // This feeds the UI box
+      analogy: data.analysis || "Adjusting positioning to maintain board pressure.",
+      news_headline: `${botColor.toUpperCase()} STRATEGIC SHIFT`,
+      stats: { fiscal_stability: 65, market_confidence: 70, inflation: 12 }
     };
 
   } catch (error: any) {
-    console.error("Critical UI Sync Error:", error);
+    console.error("Grandmaster Engine Error:", error);
+    const fallback = legalMoves[0];
     return {
-      move: legalMoves[0],
-      lastManeuver: legalMoves[0],
-      analogy: "Adjusting positions to maintain pressure.",
+      move: fallback,
+      lastManeuver: fallback,
+      analogy: "Repositioning assets to secure the perimeter.",
       news_headline: "TACTICAL REALIGNMENT",
       stats: { fiscal_stability: 50, market_confidence: 50, inflation: 50 }
     };
