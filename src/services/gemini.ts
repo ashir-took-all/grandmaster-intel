@@ -18,14 +18,21 @@ export async function generateBotTurn(
       model: "gemini-2.5-flash" 
     }, { apiVersion: "v1beta" }); 
 
-    const prompt = `You are a helpful Chess Advisor.
-    LENS: ${lens}
-    LEGAL MOVES: ${legalMoves.join(", ")}
+    // THE FIX: We tell the AI exactly who is moving right now
+    const currentPlayer = turn === 'w' ? 'White' : 'Black';
+
+    const prompt = `You are a Chess Strategy Advisor.
+    CURRENT_PLAYER_MOVING: ${currentPlayer}
+    MOVES_LIST: ${legalMoves.join(", ")}
     
     TASK:
-    1. Pick one move from the list.
-    2. Write a VERY SIMPLE 1-sentence explanation of why (No hard words).
-    3. Return ONLY JSON: {"move": "chosen_move", "analogy": "simple_sentence"}`;
+    1. Pick one move for ${currentPlayer}.
+    2. Explain it in VERY SIMPLE English (Level: 5-year-old).
+    3. Return ONLY this JSON:
+    {
+      "move": "chosen_move", 
+      "analogy": "simple_explanation"
+    }`;
 
     const result = await model.generateContent(prompt);
     let text = result.response.text().replace(/```json|```/g, "").trim();
@@ -38,25 +45,29 @@ export async function generateBotTurn(
 
     const data = JSON.parse(text);
     
-    // UI SYNC: This ensures the "Last Maneuver" box gets the right text format
     let finalMove = data.move.trim();
     if (!legalMoves.includes(finalMove)) {
-       finalMove = legalMoves[Math.floor(Math.random() * legalMoves.length)];
+       finalMove = legalMoves[0];
     }
 
+    // THE UI SYNC: We send the move to EVERY possible key 
+    // to ensure "Last Maneuver" and "Active Conflict" both see it.
     return {
       move: finalMove,
-      analogy: data.analogy || "Moving to a better spot on the board.",
-      news_headline: `${lens.toUpperCase()} UPDATE`,
+      lastManeuver: finalMove,
+      lastMove: finalMove,
+      analogy: data.analogy || "I am making a good move for my team.",
+      news_headline: `${currentPlayer.toUpperCase()} STRATEGY`,
       stats: { fiscal_stability: 50, market_confidence: 50, inflation: 10 }
     };
 
   } catch (error: any) {
-    console.error("AI Error:", error);
+    console.error("AI Logic Error:", error);
     return {
       move: legalMoves[0],
-      analogy: "Thinking about the next move...",
-      news_headline: "MARKET WATCH",
+      lastManeuver: legalMoves[0],
+      analogy: "I am moving my piece to a better square.",
+      news_headline: "TACTICAL SHIFT",
       stats: { fiscal_stability: 50, market_confidence: 50, inflation: 50 }
     };
   }
