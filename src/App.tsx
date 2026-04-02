@@ -1037,7 +1037,7 @@ export default function App() {
               <div className="space-y-2 opacity-80">
                 <div className="text-[9px] text-slate-400 font-bold tracking-[0.2em] uppercase">Last Maneuver</div>
                 <div className="p-3 border border-white/20 rounded bg-white/5 text-[11px] leading-relaxed text-slate-200">
-                  {briefingHistory[briefingHistory.length - 2].text}
+{briefingHistory[briefingHistory.length - 2].move || briefingHistory[briefingHistory.length - 2].text}
                 </div>
               </div>
             )}
