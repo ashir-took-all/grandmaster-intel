@@ -14,16 +14,18 @@ export async function generateBotTurn(
   if (!apiKey || !legalMoves.length) return null;
 
   try {
-    // 2026 UPDATE: Using gemini-2.5-flash for maximum speed and stability
     const model = genAI.getGenerativeModel({ 
       model: "gemini-2.5-flash" 
     }, { apiVersion: "v1beta" }); 
 
-    const prompt = `You are a Grandmaster Chess AI (Grandmaster Intel).
+    const prompt = `You are a helpful Chess Advisor.
+    LENS: ${lens}
     LEGAL MOVES: ${legalMoves.join(", ")}
-    LENS: ${lens} | DIFFICULTY: ${difficulty}
     
-    TASK: Pick ONE move. Return ONLY JSON: {"move": "chosen_move", "analogy": "one short strategy sentence"}`;
+    TASK:
+    1. Pick one move from the list.
+    2. Write a VERY SIMPLE 1-sentence explanation of why (No hard words).
+    3. Return ONLY JSON: {"move": "chosen_move", "analogy": "simple_sentence"}`;
 
     const result = await model.generateContent(prompt);
     let text = result.response.text().replace(/```json|```/g, "").trim();
@@ -35,21 +37,26 @@ export async function generateBotTurn(
     }
 
     const data = JSON.parse(text);
-    let move = legalMoves.includes(data.move) ? data.move : legalMoves[Math.floor(Math.random() * legalMoves.length)];
+    
+    // UI SYNC: This ensures the "Last Maneuver" box gets the right text format
+    let finalMove = data.move.trim();
+    if (!legalMoves.includes(finalMove)) {
+       finalMove = legalMoves[Math.floor(Math.random() * legalMoves.length)];
+    }
 
     return {
-      move: move,
-      analogy: data.analogy || "Strategic maneuver executed.",
+      move: finalMove,
+      analogy: data.analogy || "Moving to a better spot on the board.",
       news_headline: `${lens.toUpperCase()} UPDATE`,
       stats: { fiscal_stability: 50, market_confidence: 50, inflation: 10 }
     };
 
   } catch (error: any) {
-    console.error("Critical Gemini Error:", error);
+    console.error("AI Error:", error);
     return {
-      move: legalMoves[Math.floor(Math.random() * legalMoves.length)],
-      analogy: "Signal interference detected. Executing emergency tactical protocol.",
-      news_headline: "MARKET VOLATILITY",
+      move: legalMoves[0],
+      analogy: "Thinking about the next move...",
+      news_headline: "MARKET WATCH",
       stats: { fiscal_stability: 50, market_confidence: 50, inflation: 50 }
     };
   }
