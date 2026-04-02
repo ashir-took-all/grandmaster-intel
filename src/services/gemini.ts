@@ -18,22 +18,22 @@ export async function generateBotTurn(
       model: "gemini-2.5-flash" 
     }, { apiVersion: "v1beta" }); 
 
-    // THE FIX: We tell the AI that YOU are White and it is playing for BLACK.
     const botColor = turn === 'b' ? 'Black' : 'White';
-    const userColor = turn === 'b' ? 'White' : 'Black';
 
-    const prompt = `You are the AI Chess Bot. 
-    YOU ARE PLAYING AS: ${botColor}. 
-    THE HUMAN IS playing as: ${userColor}.
-    MOVES AVAILABLE FOR YOU: ${legalMoves.join(", ")}
-    
-    TASK:
-    1. Pick one move.
-    2. Explain it in 5-year-old English. 
-    3. IMPORTANT: Use words like "I am moving" or "The ${botColor} horse is moving".
+    // THE UPGRADE: 18-year-old Strategy Coach Persona
+    const prompt = `You are a High-Level Chess Strategist. 
+    LENS: ${lens} | YOUR COLOR: ${botColor}
+    LEGAL MOVES: ${legalMoves.join(", ")}
+    HISTORY: ${history.slice(-10).join(", ")}
+
+    STRICT GUIDELINES:
+    1. Explain the move like a 18-year-old coach (Smart, direct, tactical).
+    2. Focus on "Controlling the center" or "Developing pieces." 
+    3. NO "baby talk" or "toys." Talk about "Pressure" and "Position."
+    4. BREAK THE LOOP: Do not move the same piece back and forth.
     
     Return ONLY JSON:
-    {"move": "chosen_move", "analogy": "explanation", "lastManeuver": "chosen_move"}`;
+    {"move": "chosen_move", "strategy": "short_direct_explanation"}`;
 
     const result = await model.generateContent(prompt);
     let text = result.response.text().replace(/```json|```/g, "").trim();
@@ -46,23 +46,33 @@ export async function generateBotTurn(
 
     const data = JSON.parse(text);
     let finalMove = data.move.trim();
+
+    // LOOP BREAKER: Logic to prevent the horse from dancing in circles
+    if (history.length > 2 && history[history.length - 2] === finalMove && legalMoves.length > 1) {
+        finalMove = legalMoves.find(m => m !== finalMove) || legalMoves[0];
+    }
     if (!legalMoves.includes(finalMove)) finalMove = legalMoves[0];
 
     return {
       move: finalMove,
-      lastManeuver: finalMove, // For the UI box
-      analogy: data.analogy || "I am making a move.",
-      news_headline: `${botColor.toUpperCase()} MANEUVER`,
-      stats: { fiscal_stability: 50, market_confidence: 50, inflation: 10 }
+      // SHOTGUN MAPPING: Sending the move to every possible key name
+      lastManeuver: finalMove,
+      maneuver: finalMove,
+      lastMove: finalMove,
+      playedMove: finalMove,
+      analogy: data.strategy || "Improving piece coordination for board control.",
+      news_headline: `${botColor.toUpperCase()} STRATEGIC MANEUVER`,
+      stats: { fiscal_stability: 60, market_confidence: 65, inflation: 8 }
     };
 
   } catch (error: any) {
-    console.error("AI Logic Error:", error);
+    console.error("Coach Error:", error);
+    const fallback = legalMoves[Math.floor(Math.random() * legalMoves.length)];
     return {
-      move: legalMoves[0],
-      lastManeuver: legalMoves[0],
-      analogy: "I am moving my piece now.",
-      news_headline: "TACTICAL SHIFT",
+      move: fallback,
+      lastManeuver: fallback,
+      analogy: "Adjusting positions to maintain pressure.",
+      news_headline: "TACTICAL REALIGNMENT",
       stats: { fiscal_stability: 50, market_confidence: 50, inflation: 50 }
     };
   }
