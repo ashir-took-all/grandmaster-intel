@@ -18,21 +18,17 @@ export async function generateBotTurn(
       model: "gemini-2.5-flash" 
     }, { apiVersion: "v1beta" }); 
 
-    // THE FIX: We tell the AI exactly who is moving right now
     const currentPlayer = turn === 'w' ? 'White' : 'Black';
 
-    const prompt = `You are a Chess Strategy Advisor.
-    CURRENT_PLAYER_MOVING: ${currentPlayer}
-    MOVES_LIST: ${legalMoves.join(", ")}
+    const prompt = `You are a Chess Advisor.
+    PLAYER: ${currentPlayer}
+    MOVES: ${legalMoves.join(", ")}
     
     TASK:
-    1. Pick one move for ${currentPlayer}.
-    2. Explain it in VERY SIMPLE English (Level: 5-year-old).
+    1. Pick one move.
+    2. Explain in 1 very simple sentence (level: 5-year-old).
     3. Return ONLY this JSON:
-    {
-      "move": "chosen_move", 
-      "analogy": "simple_explanation"
-    }`;
+    {"move": "chosen_move", "simple": "explanation"}`;
 
     const result = await model.generateContent(prompt);
     let text = result.response.text().replace(/```json|```/g, "").trim();
@@ -44,29 +40,28 @@ export async function generateBotTurn(
     }
 
     const data = JSON.parse(text);
-    
     let finalMove = data.move.trim();
-    if (!legalMoves.includes(finalMove)) {
-       finalMove = legalMoves[0];
-    }
+    if (!legalMoves.includes(finalMove)) finalMove = legalMoves[0];
 
-    // THE UI SYNC: We send the move to EVERY possible key 
-    // to ensure "Last Maneuver" and "Active Conflict" both see it.
+    // THE FIX: We are sending EVERY possible name for a move.
+    // This way, no matter what the UI box is named, it finds the data.
     return {
       move: finalMove,
       lastManeuver: finalMove,
+      maneuver: finalMove,
       lastMove: finalMove,
-      analogy: data.analogy || "I am making a good move for my team.",
+      playedMove: finalMove,
+      analogy: data.simple || "Moving a piece to help the team.",
       news_headline: `${currentPlayer.toUpperCase()} STRATEGY`,
       stats: { fiscal_stability: 50, market_confidence: 50, inflation: 10 }
     };
 
   } catch (error: any) {
-    console.error("AI Logic Error:", error);
+    console.error("UI Sync Error:", error);
     return {
       move: legalMoves[0],
       lastManeuver: legalMoves[0],
-      analogy: "I am moving my piece to a better square.",
+      analogy: "Making a move to a new square.",
       news_headline: "TACTICAL SHIFT",
       stats: { fiscal_stability: 50, market_confidence: 50, inflation: 50 }
     };
