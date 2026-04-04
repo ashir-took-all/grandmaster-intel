@@ -3,69 +3,66 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 const apiKey = (import.meta.env as any).VITE_GEMINI_API_KEY || "";
 const genAI = new GoogleGenerativeAI(apiKey);
 
+// --- THE LOCAL BRAIN (Calculates the move without AI) ---
+function calculateBestMove(legalMoves: string[]) {
+  // 1. Look for captures (Check for 'x' in SAN notation)
+  const captures = legalMoves.filter(m => m.includes('x'));
+  if (captures.length > 0) return captures[0];
+
+  // 2. Look for central control (e4, d4, Nf3, Nc3, e5, d5)
+  const centerMoves = legalMoves.filter(m => 
+    m.startsWith('e4') || m.startsWith('d4') || m.startsWith('Nf3') || m.startsWith('Nc3') ||
+    m.startsWith('e5') || m.startsWith('d5')
+  );
+  if (centerMoves.length > 0) return centerMoves[Math.floor(Math.random() * centerMoves.length)];
+
+  // 3. Otherwise, pick a random legal move
+  return legalMoves[Math.floor(Math.random() * legalMoves.length)];
+}
+
 export async function generateBotTurn(
   fen: string,
   history: string[],
   legalMoves: string[],
   turn: 'w' | 'b',
-  lens: string = 'Geopolitics',
-  difficulty: string = 'GLOBAL'
+  lens: string = 'Geopolitics'
 ) {
-  if (!apiKey || !legalMoves || legalMoves.length === 0) return null;
+  if (!legalMoves.length) return null;
 
+  // STEP 1: Calculate the move INSTANTLY using our local rules
+  const chosenMove = calculateBestMove(legalMoves);
+
+  // STEP 2: Ask Gemini ONLY for the "Advisor Briefing"
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" }); 
+    if (!apiKey) throw new Error("No API Key");
 
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
     const botColor = turn === 'b' ? 'Black' : 'White';
-    const humanColor = turn === 'b' ? 'White' : 'Black';
 
-    // SIMPLEST PROMPT POSSIBLE: No room for error.
-    const prompt = `You are a Chess Advisor. Play as ${botColor}.
-    VALID_MOVES: [${legalMoves.join(", ")}]
-    
-    TASK:
-    1. Pick one move from the list.
-    2. Write a 2-sentence strategy. 
-    3. Use "Commander, your move..." if you are explaining the human's play.
-    
-    Return ONLY JSON:
-    {"move": "SAN_MOVE", "analysis": "SHORT_TEXT"}`;
+    const prompt = `You are a Senior Geopolitical Advisor. 
+    The bot (playing as ${botColor}) just moved: ${chosenMove}. 
+    Explain why this is a strong strategic maneuver in the context of ${lens}. 
+    Keep it to exactly 2 short, punchy sentences. Start with "Commander,".`;
 
     const result = await model.generateContent(prompt);
-    let rawText = result.response.text();
-    
-    // SURGICAL EXTRACTION: Cuts out any talking before or after the JSON
-    const start = rawText.indexOf('{');
-    const end = rawText.lastIndexOf('}');
-    const data = JSON.parse(rawText.substring(start, end + 1));
-    
-    let finalMove = data.move.trim();
-
-    // PIECE PROTECTION: Ensures the piece actually moves legally
-    if (!legalMoves.includes(finalMove)) {
-       finalMove = legalMoves[0];
-    }
+    const analysis = result.response.text().trim();
 
     return {
-      move: finalMove,
-      text: data.analysis,           // Fills Active Conflict
-      lastManeuver: data.analysis,    // Saved for the next turn shift
-      analogy: data.analysis,
-      news_headline: `${botColor.toUpperCase()} STRATEGIC MANEUVER`, // Professional Headline
-      stats: { fiscal_stability: 78, market_confidence: 85, inflation: 4 }
+      move: chosenMove,
+      text: analysis,
+      lastManeuver: analysis,
+      news_headline: `${botColor.toUpperCase()} ADVANCE`,
+      stats: { fiscal_stability: 85, market_confidence: 90, inflation: 2 }
     };
 
-  } catch (error: any) {
-    console.error("Engine Fallback:", error);
-    // STABLE FALLBACK: What shows if the AI fails
-    const safeMove = legalMoves[0];
+  } catch (error) {
+    // STEP 3: If Quota is full, the game STILL works with a default briefing
     return {
-      move: safeMove,
-      text: "Securing the center. Commander, your positioning requires a tactical response.",
-      lastManeuver: "Maintaining defensive integrity across the front line.",
-      analogy: "Strategic realignment.",
-      news_headline: "TACTICAL UPDATE",
-      stats: { fiscal_stability: 60, market_confidence: 60, inflation: 10 }
+      move: chosenMove,
+      text: `Commander, we have executed ${chosenMove} to maintain our tactical perimeter. Local intel is holding steady.`,
+      lastManeuver: `Executed ${chosenMove} for board control.`,
+      news_headline: "TACTICAL REALIGNMENT",
+      stats: { fiscal_stability: 60, market_confidence: 60, inflation: 5 }
     };
   }
 }
