@@ -1033,46 +1033,47 @@ export default function App() {
               {isAnalyzing && <RefreshCw size={12} className="animate-spin text-dash-accent" />}
             </div>
           </div>
-          
-          <div className="flex-1 overflow-y-auto p-4 custom-scrollbar font-mono space-y-6">
-  {/* 1. LAST MANEUVER BOX */}
-  {briefingHistory.length > 1 && (
-    <div className="space-y-2 opacity-80">
-      <div className="text-[9px] text-slate-400 font-bold tracking-[0.2em] uppercase">Last Maneuver</div>
-      <div className="p-3 border border-white/20 rounded bg-white/5 text-[11px] leading-relaxed text-slate-200">
-        {briefingHistory[briefingHistory.length - 2].text}
-      </div>
-    </div>
-  )}
-
-  {/* 2. ACTIVE CONFLICT BOX */}
-  {briefingHistory.length > 0 ? (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <div className="text-[9px] text-dash-accent font-bold tracking-[0.2em] uppercase">Active Conflict</div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
-          <span className="text-[8px] text-blue-500/70 font-bold uppercase tracking-tighter">Live Intel</span>
-        </div>
-      </div>
+          {/* SECTION: STRATEGIC ANALYSIS - Clean Build for Vercel */}
+    <div className="flex-1 overflow-y-auto p-4 custom-scrollbar font-mono space-y-6">
       
-      <div className="p-4 border-l-4 border-blue-500 bg-blue-500/5 rounded-r text-[13px] leading-relaxed text-white shadow-[inset_0_0_20px_rgba(59,130,246,0.05)]">
-        {briefingHistory[briefingHistory.length - 1].text}
-        
-        <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between">
-          <div className="text-[9px] font-bold text-blue-400/40 uppercase tracking-widest">Status: Operational</div>
-          <div className="text-[8px] text-slate-600 uppercase tracking-tighter">
-            {briefingHistory[briefingHistory.length - 1].timestamp}
+      {/* 1. LAST MANEUVER BOX */}
+      {briefingHistory.length > 1 && (
+        <div className="space-y-2 opacity-80">
+          <div className="text-[9px] text-slate-400 font-bold tracking-[0.2em] uppercase">Last Maneuver</div>
+          <div className="p-3 border border-white/20 rounded bg-white/5 text-[11px] leading-relaxed text-slate-200">
+            {briefingHistory[briefingHistory.length - 2].text}
           </div>
         </div>
-      </div>
+      )}
+
+      {/* 2. ACTIVE CONFLICT BOX */}
+      {briefingHistory.length > 0 ? (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="text-[9px] text-dash-accent font-bold tracking-[0.2em] uppercase">Active Conflict</div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
+              <span className="text-[8px] text-blue-500/70 font-bold uppercase tracking-tighter">Live Intel</span>
+            </div>
+          </div>
+          
+          <div className="p-4 border-l-4 border-blue-500 bg-blue-500/5 rounded-r text-[13px] leading-relaxed text-white shadow-[inset_0_0_20px_rgba(59,130,246,0.05)]">
+            {briefingHistory[briefingHistory.length - 1].text}
+            
+            <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between">
+              <div className="text-[9px] font-bold text-blue-400/40 uppercase tracking-widest">Status: Operational</div>
+              <div className="text-[8px] text-slate-600 uppercase tracking-tighter">
+                {briefingHistory[briefingHistory.length - 1].timestamp}
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="h-full flex flex-col items-center justify-center opacity-20 space-y-2">
+           <div className="text-[10px] uppercase tracking-widest">Awaiting Tactical Uplink...</div>
+        </div>
+      )}
     </div>
-  ) : (
-    <div className="h-full flex flex-col items-center justify-center opacity-20 space-y-2">
-       <div className="text-[10px] uppercase tracking-widest">Awaiting Tactical Uplink...</div>
-    </div>
-  )}
-</div>
           <div className="text-[8px] text-slate-600 uppercase tracking-tighter">
             {briefingHistory[briefingHistory.length - 1].timestamp}
           </div>
