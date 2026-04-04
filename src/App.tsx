@@ -1028,61 +1028,45 @@ export default function App() {
                 className="p-1 text-slate-500 hover:text-dash-accent transition-colors"
                 title={isMuted ? "Unmute Tactical Audio" : "Mute Tactical Audio"}
               >
-                {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
+               {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
         </button>
         {isAnalyzing && <RefreshCw size={12} className="animate-spin text-dash-accent" />}
       </div>
-    </div>
-
-    {/* SECTION: STRATEGIC ANALYSIS - Original Stable Build */}
-    <div className="flex-1 overflow-y-auto p-4 custom-scrollbar font-mono space-y-6">
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <div className="text-[9px] text-dash-accent font-bold tracking-[0.2em] uppercase">Active Conflict</div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
-            <span className="text-[8px] text-blue-500/70 font-bold uppercase tracking-tighter">Live Intel</span>
-          </div>
-        </div>
-        
-        <div className="p-4 border-l-4 border-blue-500 bg-blue-500/5 rounded-r text-[13px] leading-relaxed text-white">
-          {briefingHistory.length > 0 ? (
-            <>
-              {briefingHistory[briefingHistory.length - 1].text}
-              <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between">
-                <div className="text-[9px] font-bold text-blue-400/40 uppercase tracking-widest flex items-center gap-2">
-                   Status: Operational
-                </div>
-                <div className="text-[8px] text-slate-600 uppercase tracking-tighter">
-                  {briefingHistory[briefingHistory.length - 1].timestamp}
-                </div>
-              </div>
-            </>
-          ) : (
-            <div className="opacity-20 text-[10px] uppercase tracking-widest text-center py-10">
-              Awaiting Tactical Uplink...
-            </div>
-          )}
-        </div>
       </div>
-    </div>
-  </div>
 
-  {/* News Ticker / Market Impact Box Starts Here */}
-  <div className="min-h-0 flex flex-col border border-white/5 bg-white/5 backdrop-blur-xl rounded-lg overflow-hidden">
-                  <div className="text-[8px] text-slate-500 mb-1 font-mono uppercase tracking-tighter">Live // {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-                  {headline.text}
-                </motion.div>
-              ))}
-            </AnimatePresence>
-            {headlines.length === 0 && (
-              <div className="h-full flex items-center justify-center opacity-20 italic text-[10px] text-center">
-                Awaiting volatility...
+      {/* STRATEGIC ANALYSIS - Final Stable Bridge */}
+      <div className="flex-1 overflow-y-auto p-4 custom-scrollbar font-mono space-y-6">
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="text-[9px] text-dash-accent font-bold tracking-[0.2em] uppercase">Active Conflict</div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
+              <span className="text-[8px] text-blue-500/70 font-bold uppercase tracking-tighter">Live Intel</span>
+            </div>
+          </div>
+          
+          <div className="p-4 border-l-4 border-blue-500 bg-blue-500/5 rounded-r text-[13px] leading-relaxed text-white">
+            {briefingHistory.length > 0 ? (
+              <>
+                {briefingHistory[briefingHistory.length - 1].text}
+                <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between">
+                  <div className="text-[9px] font-bold text-blue-400/40 uppercase tracking-widest flex items-center gap-2">
+                     Status: Operational
+                  </div>
+                  <div className="text-[8px] text-slate-600 uppercase tracking-tighter">
+                    {briefingHistory[briefingHistory.length - 1].timestamp}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="opacity-20 text-[10px] uppercase tracking-widest text-center py-10">
+                Awaiting Tactical Uplink...
               </div>
             )}
           </div>
         </div>
       </div>
+    </div>
       <AnimatePresence>
         <WelcomeModal 
           showWelcome={showWelcome} 
