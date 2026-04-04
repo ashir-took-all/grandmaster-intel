@@ -1,13 +1,8 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// 1. INITIALIZE ENGINE
 const apiKey = (import.meta.env as any).VITE_GEMINI_API_KEY || "";
 const genAI = new GoogleGenerativeAI(apiKey);
 
-/**
- * COMMANDER ASHIR'S STRATEGIC ENGINE
- * This function handles the AI's brain and the Advisor's voice.
- */
 export async function generateBotTurn(
   fen: string,
   history: string[],
@@ -16,85 +11,81 @@ export async function generateBotTurn(
   lens: string = 'Geopolitics',
   difficulty: string = 'GLOBAL'
 ) {
-  // SAFETY CHECK: If no API key or no moves, abort to prevent crash.
-  if (!apiKey || !legalMoves.length) {
-    console.error("Engine Stop: Missing API Key or Legal Moves.");
-    return null;
-  }
+  if (!apiKey || !legalMoves.length) return null;
 
   try {
-    // USE THE FASTEST MODEL FOR REAL-TIME REELS
     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" }); 
 
-    // 2. DEFINE PERSPECTIVE
     const botColor = turn === 'b' ? 'Black' : 'White';
     const humanColor = turn === 'b' ? 'White' : 'Black';
+
+    // THE BRAIN: Teaching the AI exactly who is moving and how to talk
+    const prompt = `You are a Senior Geopolitical Advisor.
+    PLAYER_ROLE: ${humanColor} (Commander/User)
+    AI_ROLE: ${botColor} (Strategist)
+    LENS: ${lens} | DIFFICULTY: ${difficulty}
     
-    // 3. BUILD THE "SMART" PROMPT
-    const prompt = `
-      ROLE: You are a Senior Geopolitical Chess Advisor (Elite Strategist).
-      LENS: Analyzing through ${lens} at a ${difficulty} level.
-      
-      SITUATIONAL AWARENESS:
-      - Board State (FEN): ${fen}
-      - Recent Moves: ${history.slice(-10).join(" -> ")}
-      - Your Role: You are playing as ${botColor}.
-      - Opponent: The Human is playing as ${humanColor}.
+    BOARD_HISTORY: ${history.slice(-10).join(" -> ")}
+    LEGAL_MOVES: ${legalMoves.join(", ")}
 
-      INSTRUCTIONS:
-      1. SELECT MOVE: Pick the most tactical move from this list: [${legalMoves.join(", ")}].
-      2. ANALYZE PERSPECTIVE: 
-         - If the LAST move in history was by ${humanColor}, start by explaining THEIR move (e.g., "Commander, your push to...").
-         - Then, explain why your upcoming move (${botColor}) is the perfect response.
-      3. BREVITY RULE: Keep the total analysis under 50 words (Max 2 sentences).
-      4. FORMAT: Return ONLY a valid JSON object.
+    INSTRUCTIONS:
+    1. Select the best move from the LEGAL_MOVES list.
+    2. ANALYSIS PERSPECTIVE: 
+       - If the LAST move was by ${humanColor}, start by explaining THEIR move (e.g., "Commander, your push to...").
+       - If YOU (${botColor}) are moving, explain YOUR strategy (e.g., "I am responding with...").
+    3. BREVITY: Max 2 short sentences. No walls of text.
+    4. FORMAT: Return ONLY a JSON object. No extra talking.
 
-      JSON STRUCTURE:
-      {
-        "move": "Use Standard Algebraic Notation (e.g., Nf3)",
-        "analysis": "Short, sharp tactical briefing."
-      }
-    `;
+    JSON_TEMPLATE:
+    {
+      "move": "SAN_MOVE",
+      "analysis": "Short 2-sentence briefing."
+    }`;
 
-    // 4. EXECUTE AI THOUGHT PROCESS
     const result = await model.generateContent(prompt);
-    let responseText = result.response.text().replace(/```json|```/g, "").trim();
+    const response = await result.response;
+    let text = response.text();
     
-    // CLEANING THE DATA (Regex to find the JSON block)
-    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) throw new Error("Invalid AI Response Format");
+    // SURGICAL CLEANING: Find only the JSON block to prevent "Sync Errors"
+    const start = text.indexOf('{');
+    const end = text.lastIndexOf('}');
     
-    const data = JSON.parse(jsonMatch[0]);
+    if (start === -1 || end === -1) throw new Error("Invalid AI Response");
+    
+    const cleanJson = text.substring(start, end + 1);
+    const data = JSON.parse(cleanJson);
+    
     let finalMove = data.move.trim();
 
-    // 5. MOVE VALIDATION (Ensures the AI doesn't "cheat" or hallucinate)
+    // VALIDATION: Ensure the move exists in the legal list
     if (!legalMoves.includes(finalMove)) {
-       console.warn(`AI suggested illegal move: ${finalMove}. Falling back to safest option.`);
-       finalMove = legalMoves[0]; 
+       finalMove = legalMoves[0];
     }
 
-    // 6. RETURN SYNCED DATA TO THE UI
+    // FINAL DATA SYNC: Feeds both boxes and the Market Impact
     return {
       move: finalMove,
-      text: data.analysis,           // For 'Active Conflict'
-      lastManeuver: data.analysis,    // For 'Last Maneuver' (on next turn shift)
+      text: data.analysis,
+      lastManeuver: data.analysis,
       analogy: data.analysis,
-      news_headline: `${botColor.toUpperCase()} OPERATIONAL UPDATE`,
+      news_headline: `${botColor.toUpperCase()} STRATEGIC SHIFT`,
       stats: { 
-        fiscal_stability: Math.floor(Math.random() * 20) + 60, 
-        market_confidence: Math.floor(Math.random() * 20) + 70, 
+        fiscal_stability: 70, 
+        market_confidence: 75, 
         inflation: 5 
       }
     };
 
   } catch (error: any) {
-    console.error("Strategic Engine Critical Failure:", error);
+    console.error("Critical Engine Error:", error);
+    // FALLBACK: Prevents the UI from showing empty boxes if AI fails
+    const fallback = legalMoves[0];
     return {
-      move: legalMoves[0],
-      text: "System recalibrating. Maintaining defensive perimeter.",
-      lastManeuver: "Tactical data stream interrupted.",
-      analogy: "Engine error fallback initiated.",
-      news_headline: "DATA SYNC ERROR",
+      move: fallback,
+      text: "Securing tactical perimeter. System recalibrating for next phase.",
+      lastManeuver: "Data link stabilized. Awaiting commander's next move.",
+      analogy: "Tactical realignment initiated.",
+      news_headline: "ENGINE STABILIZED",
       stats: { fiscal_stability: 50, market_confidence: 50, inflation: 50 }
     };
   }
