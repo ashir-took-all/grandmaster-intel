@@ -55,14 +55,19 @@ export async function generateBotTurn(
       stats: { fiscal_stability: 85, market_confidence: 90, inflation: 2 }
     };
 
-  } catch (error) {
-    // STEP 3: If Quota is full, the game STILL works with a default briefing
+  } catch (error: any) {
+    console.warn("AI Quota hit (429). Using local tactical briefing.");
+    
+    // This returns the text immediately so the boxes don't stay empty
     return {
       move: chosenMove,
-      text: `Commander, we have executed ${chosenMove} to maintain our tactical perimeter. Local intel is holding steady.`,
-      lastManeuver: `Executed ${chosenMove} for board control.`,
-      news_headline: "TACTICAL REALIGNMENT",
-      stats: { fiscal_stability: 60, market_confidence: 60, inflation: 5 }
+      text: `Commander, tactical sensors indicate high signal interference. Executing ${chosenMove} based on localized ${lens} protocols to maintain board control.`,
+      lastManeuver: `Positioned at ${chosenMove}.`,
+      news_headline: "LOCAL INTEL ACTIVE",
+      stats: { 
+        fiscal_stability: Math.floor(Math.random() * 10) + 80, 
+        market_confidence: Math.floor(Math.random() * 10) + 70, 
+        inflation: 4 
+      }
     };
   }
-}
