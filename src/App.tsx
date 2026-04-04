@@ -1028,45 +1028,86 @@ export default function App() {
                 className="p-1 text-slate-500 hover:text-dash-accent transition-colors"
                 title={isMuted ? "Unmute Tactical Audio" : "Mute Tactical Audio"}
               >
-               {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
-        </button>
-        {isAnalyzing && <RefreshCw size={12} className="animate-spin text-dash-accent" />}
-      </div>
-      </div>
-
-      {/* STRATEGIC ANALYSIS - Final Stable Bridge */}
-      <div className="flex-1 overflow-y-auto p-4 custom-scrollbar font-mono space-y-6">
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <div className="text-[9px] text-dash-accent font-bold tracking-[0.2em] uppercase">Active Conflict</div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
-              <span className="text-[8px] text-blue-500/70 font-bold uppercase tracking-tighter">Live Intel</span>
+                {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
+              </button>
+              {isAnalyzing && <RefreshCw size={12} className="animate-spin text-dash-accent" />}
             </div>
           </div>
           
-          <div className="p-4 border-l-4 border-blue-500 bg-blue-500/5 rounded-r text-[13px] leading-relaxed text-white">
+          <div className="flex-1 overflow-y-auto p-4 custom-scrollbar font-mono space-y-6">
+            {briefingHistory.length > 1 && (
+              <div className="space-y-2 opacity-80">
+                <div className="text-[9px] text-slate-400 font-bold tracking-[0.2em] uppercase">Last Maneuver</div>
+                <div className="p-3 border border-white/20 rounded bg-white/5 text-[11px] leading-relaxed text-slate-200">
+{briefingHistory[briefingHistory.length - 2].text}
+                </div>
+              </div>
+            )}
+
             {briefingHistory.length > 0 ? (
-              <>
-                {briefingHistory[briefingHistory.length - 1].text}
-                <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between">
-                  <div className="text-[9px] font-bold text-blue-400/40 uppercase tracking-widest flex items-center gap-2">
-                     Status: Operational
-                  </div>
-                  <div className="text-[8px] text-slate-600 uppercase tracking-tighter">
-                    {briefingHistory[briefingHistory.length - 1].timestamp}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="text-[9px] text-dash-accent font-bold tracking-[0.2em] uppercase">Active Conflict</div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
+                    <span className="text-[8px] text-blue-500/70 font-bold uppercase tracking-tighter">Live Intel</span>
                   </div>
                 </div>
-              </>
+                <div className="p-4 border-l-4 border-blue-500 bg-blue-500/5 rounded-r text-[13px] leading-relaxed text-white shadow-[inset_0_0_20px_rgba(59,130,246,0.05)]">
+                  {briefingHistory[briefingHistory.length - 1].text}
+                  <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between">
+                    <div className="text-[9px] font-bold text-blue-400/40 uppercase tracking-widest flex items-center gap-2">
+                      <Shield size={10} />
+                      Status: {game.isCheck() ? 'Elevated Risk' : 'Operational'}
+                    </div>
+                    <div className="text-[8px] text-slate-600 uppercase tracking-tighter">
+                      {briefingHistory[briefingHistory.length - 1].timestamp}
+                    </div>
+                  </div>
+                  {globalBaseline && (
+                    <div className="mt-2 text-[8px] text-blue-500/40 font-mono uppercase tracking-widest border-t border-white/5 pt-2">
+                      Global Economic Baseline: {globalBaseline}
+                    </div>
+                  )}
+                </div>
+              </div>
             ) : (
-              <div className="opacity-20 text-[10px] uppercase tracking-widest text-center py-10">
-                Awaiting Tactical Uplink...
+              <div className="h-full flex flex-col items-center justify-center opacity-20 space-y-2">
+                <Terminal size={32} />
+                <div className="text-[10px] font-bold uppercase tracking-widest">Awaiting Input</div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* News Ticker */}
+        <div className="min-h-0 flex flex-col border border-white/5 bg-white/5 backdrop-blur-xl rounded-lg overflow-hidden">
+          <div className="p-4 border-b border-white/10 flex items-center gap-2 bg-white/5">
+            <Globe size={14} className="text-dash-accent" />
+            <div className="text-[10px] font-bold text-dash-accent uppercase tracking-widest">Market Impact</div>
+          </div>
+          <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+            <AnimatePresence initial={false}>
+              {headlines.map((headline) => (
+                <motion.div
+                  key={headline.id}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className="p-3 bg-white/5 border-l-2 border-dash-accent rounded-r text-[11px] font-sans leading-tight text-slate-300"
+                >
+                  <div className="text-[8px] text-slate-500 mb-1 font-mono uppercase tracking-tighter">Live // {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                  {headline.text}
+                </motion.div>
+              ))}
+            </AnimatePresence>
+            {headlines.length === 0 && (
+              <div className="h-full flex items-center justify-center opacity-20 italic text-[10px] text-center">
+                Awaiting volatility...
               </div>
             )}
           </div>
         </div>
       </div>
-    </div>
       <AnimatePresence>
         <WelcomeModal 
           showWelcome={showWelcome} 
